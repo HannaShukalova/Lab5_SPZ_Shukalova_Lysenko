@@ -1,22 +1,17 @@
-﻿using System;
-using System.Runtime.Serialization;
-
-namespace Lab5_team1
+﻿namespace Lab7_team1
 {
-    [DataContract]
     public class Group
     {
-        [DataMember]
         public string Name { get; set; } = "";
-        [DataMember]
-        public string GroupID { get; private set; } = "";
+        public int GroupID { get; private set; }
 
-        public Group(string name = "Dumbasses")
+        public Group(int groupId, string name)
         {
             Name = name;
-            GroupID = Guid.NewGuid().ToString();
+            GroupID = groupId;
         }
-        public void ChangeGroupName(string newName = "Dumbasses") => Name = newName;
+
+        public Group() { }
         public override string ToString() => $"Группа \"{Name}\" с ID <{GroupID}>";
     }
 }

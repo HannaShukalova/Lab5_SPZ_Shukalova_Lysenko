@@ -1,11 +1,8 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 
-namespace Lab5_team1
+namespace Lab7_team1
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         public DataContainer DataContainer { get; private set; } = new DataContainer();
@@ -16,8 +13,7 @@ namespace Lab5_team1
             DataContainer = TryFindResource("dataContainer") as DataContainer;
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e) => DataContainer.LoadDataFromJSON(DataContainer);
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) => DataContainer.SaveDataToJSON(DataContainer);
+        private void Window_Loaded(object sender, RoutedEventArgs e) => DataContainer.LoadDataFromDatabase(DataContainer);
 
         private void btAllGroups_Click(object sender, RoutedEventArgs e) => cbCurrentGroup.SelectedIndex = -1;
 
@@ -50,12 +46,13 @@ namespace Lab5_team1
         private void btAddGroup_Click(object sender, RoutedEventArgs e)
         {
             GroupChange groupChange = new GroupChange();
+
             groupChange.ShowDialog();
 
             if (groupChange.group != null)
             {
                 DataContainer.AddGroup(groupChange.group);
-                cbCurrentGroup.SelectedIndex = cbCurrentGroup.Items.Count - 1;
+                DataContainer.Groups = new DBConnection().getAllGroups();
             }
         }
         private void btDeleteGroup_Click(object sender, RoutedEventArgs e)
@@ -66,18 +63,11 @@ namespace Lab5_team1
                 return;
             }
 
-            for (int i = 0; i < DataContainer.Students.Count; )
-            {
-                if (DataContainer.Students[i].StudentGroupID == (cbCurrentGroup.SelectedItem as Group).GroupID)
-                {
-                    DataContainer.RemoveStudent(DataContainer.Students[i]);
-                }
-                else
-                    i++;
-            }
-
+            DataContainer.RemoveStudentByGroupId((cbCurrentGroup.SelectedItem as Group).GroupID);
             DataContainer.RemoveGroup(cbCurrentGroup.SelectedItem as Group);
-            cbCurrentGroup.SelectedIndex = cbCurrentGroup.Items.Count - 1;
+
+            DataContainer.Groups = new DBConnection().getAllGroups();
+            DataContainer.Students = new DBConnection().getAllStudents();
         }
         private void btRenameGroup_Click(object sender, RoutedEventArgs e)
         {
@@ -92,8 +82,8 @@ namespace Lab5_team1
 
             if (groupChange.group != null)
             {
-                (cbCurrentGroup.SelectedItem as Group).ChangeGroupName(groupChange.group.Name);
-                cbCurrentGroup.Items.Refresh();
+                DataContainer.RenameGroup(cbCurrentGroup.SelectedItem as Group, groupChange.group.Name);
+                DataContainer.Groups = new DBConnection().getAllGroups();
             }
         }
 
@@ -110,8 +100,10 @@ namespace Lab5_team1
 
             if (studentChange.student != null)
             {
-                studentChange.student.ChangeGroup((cbCurrentGroup.SelectedItem as Group).GroupID);
-                DataContainer.AddStudent(studentChange.student);
+                Student newStudent = studentChange.student as Student;
+                newStudent.StudentGroupID = (cbCurrentGroup.SelectedItem as Group).GroupID;
+                DataContainer.AddStudent(newStudent);
+                DataContainer.Students = new DBConnection().getAllStudents();
             }
         }
         private void btDeleteSt_Click(object sender, RoutedEventArgs e)
@@ -127,8 +119,10 @@ namespace Lab5_team1
                 return;
             }
 
-            DataContainer.RemoveStudent(dbStudents.SelectedItem as Student);
+            DataContainer.RemoveStudentById(dbStudents.SelectedItem as Student);
+            DataContainer.Students = new DBConnection().getAllStudents();
         }
+
         private void btRenameSt_Click(object sender, RoutedEventArgs e)
         {
             if (cbCurrentGroup.SelectedIndex < 0)
@@ -148,11 +142,11 @@ namespace Lab5_team1
 
             if (studentChange.student != null)
             {
-                (dbStudents.SelectedItem as Student).Rename(studentChange.student.FirstName, studentChange.student.Patronymic, studentChange.student.LastName);
-                cbCurrentGroup.SelectedIndex = -1;
-                dbStudents.Items.Refresh();
+                DataContainer.ChangeStudentById(studentChange.student, (dbStudents.SelectedItem as Student).StudentID);
+                DataContainer.Students = new DBConnection().getAllStudents();
             }
         }
+
         private void btChangeStGroup_Click(object sender, RoutedEventArgs e)
         {
             if (cbCurrentGroup.SelectedIndex < 0)
@@ -176,20 +170,20 @@ namespace Lab5_team1
 
             if (studentChange.student != null)
             {
-                foreach (var item in DataContainer.Groups)
+                Group group = DataContainer.GetGroupByName(studentChange.NewGroupName);
+
+                if (group.Name.Equals(studentChange.NewGroupName))
                 {
-                    if (item.Name == studentChange.NewGroupName)
-                    {
-                        (dbStudents.SelectedItem as Student).ChangeGroup(item.GroupID);
-                        MessageBox.Show("Группа успешно изменена", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
-                        cbCurrentGroup.SelectedIndex = -1;
-                        dbStudents.Items.Refresh();
-                        return;
-                    }
+                    DataContainer.ChangeStudentGroupById(group.GroupID, (dbStudents.SelectedItem as Student).StudentID);
+                    MessageBox.Show("Группа успешно изменена", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
+                    DataContainer.Students = new DBConnection().getAllStudents();
+                    return;
                 }
-                MessageBox.Show("Указанное имя группы не существует", "Информация", MessageBoxButton.OK, MessageBoxImage.Error);
+                else
+                {
+                    MessageBox.Show("Указанное имя группы не существует", "Информация", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
-
     }
 }

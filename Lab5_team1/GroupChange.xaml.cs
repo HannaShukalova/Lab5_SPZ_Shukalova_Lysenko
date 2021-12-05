@@ -1,10 +1,10 @@
-﻿using System.Windows;
+﻿using Oracle.ManagedDataAccess.Client;
+using System;
+using System.Data.SqlClient;
+using System.Windows;
 
-namespace Lab5_team1
+namespace Lab7_team1
 {
-    /// <summary>
-    /// Interaction logic for GroupChange.xaml
-    /// </summary>
     public partial class GroupChange : Window
     {
         public Group group { get; private set; }
